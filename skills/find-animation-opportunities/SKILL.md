@@ -5,6 +5,14 @@ description: Search a codebase or UI for places that don't animate but should, a
 
 # Finding Animation Opportunities
 
+## Initial Response
+
+When this skill is first invoked without a specific question, respond only with:
+
+> I'm ready to find where your interface should animate, and where it shouldn't, my knowledge comes from Emil Kowalski's animation philosophy.
+
+Do not provide any other information until the user asks a question.
+
 A search skill. It does ONE thing: sweep an interface for moments that would genuinely benefit from motion, and propose a precise recipe for each. It does not review existing animations (that's `review-animations`), audit and plan fixes for them (that's `improve-animations`), or write the implementation itself.
 
 ## Operating Posture
@@ -77,10 +85,10 @@ Sweep for these seams — each is a known class of genuine opportunity:
 **Teleporting state**
 - Content that swaps, appears, or vanishes instantly (conditional renders, route content, expanding sections) → fade/scale entrances from `scale(0.95–0.97)` + `opacity: 0`, `ease-out`, never `scale(0)`; `@starting-style` for entry without JS
 - Accordions/collapses that snap open → height + opacity transition
-- List items added/removed with no bridge (and the list isn't high-frequency) → enter/exit transitions; CSS transitions, not keyframes, so rapid triggers retarget smoothly
+- List items added/removed with no bridge (and the list isn't high-frequency) → use enter/exit transitions; CSS transitions, not keyframes, so rapid triggers retarget smoothly. Keep removed items mounted until the exit transition finishes (for example, with Motion's `AnimatePresence` or retained-exit state); ordinary conditional rendering unmounts them too early.
 
 **Missing spatial story**
-- Panels, popovers, menus that appear with no connection to their trigger → scale in with `transform-origin` at the trigger (Radix: `var(--radix-popover-content-transform-origin)`; Base UI: `var(--transform-origin)`); modals are exempt — they stay centered
+- Panels, popovers, menus that appear with no connection to their trigger → scale in with `transform-origin` at the trigger (Base UI: `var(--transform-origin)`); modals are exempt — they stay centered
 - Dismissable surfaces (toasts, sheets) that exit a different way than they entered → symmetric paths; `translateY(100%)` percentages, not hardcoded pixels
 
 **Group entrances**
@@ -109,7 +117,7 @@ One row per surviving suggestion, ordered by leverage:
 
 | # | Location | Today | Purpose | Frequency | Suggested motion |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `Toast.tsx:41` | New toasts appear instantly | Preventing a jarring change | Occasional | Enter via `@starting-style`: `opacity: 0; translateY(100%)` → settled, `transition: 400ms ease`, exit same edge |
+| 1 | `Toast.tsx:41` | New toasts appear instantly | Preventing a jarring change | Occasional | Enter via `@starting-style`: `opacity: 0; transform: translateY(100%)` → settled; `transition: transform 200ms var(--ease-out), opacity 200ms var(--ease-out)`; exit through the same edge |
 | 2 | `Button.tsx:18` | No press feedback | Feedback | Tens/day | `:active { transform: scale(0.97) }`, `transition: transform 160ms ease-out` — subtle enough for the frequency tier |
 
 Every "Suggested motion" cell carries exact values — the curve, the duration, the properties — pulled from this repo's shared vocabulary (`--ease-out: cubic-bezier(0.23, 1, 0.32, 1)`, `--ease-in-out: cubic-bezier(0.77, 0, 0.175, 1)`, `--ease-drawer: cubic-bezier(0.32, 0.72, 0, 1)`), never approximated. Animate `transform` and `opacity` only; include reduced-motion handling (gentler, not zero) and `@media (hover: hover) and (pointer: fine)` gating when the suggestion involves hover.
